@@ -1,0 +1,33 @@
+name: Build
+
+on: 
+  watch:
+    types: [started]
+   
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+    - name: Set up Java
+      run: sudo apt install openjdk-16-jdk
+    - name: Echo Java version
+      run: /usr/lib/jvm/java-16-openjdk-amd64/bin/java --version
+    - name: Download BuildTool
+      run: wget https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+    - name: Build
+      run: /usr/lib/jvm/java-16-openjdk-amd64/bin/java -jar BuildTools.jar
+    - name: Echo result
+      run: ls -al
+    - name: Commit
+      run: |
+        git config --global user.email AutoupdateRobot@email.com
+        git config --global user.name AutoupdateRobot
+        git add `find . -maxdepth 1 -type f | grep -v '^\./\.'`
+        git commit -m "update" -a
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
